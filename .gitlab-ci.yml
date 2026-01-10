@@ -18,3 +18,6 @@ build-image:
     - docker push $IMAGE_NAME:latest
   only:
     - main
+
+  tags:
+    - shell
