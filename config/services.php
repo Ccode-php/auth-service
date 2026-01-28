@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'passport' => [
+        'token_url' => env('PASSPORT_TOKEN_URL'),
+    ],
+
 ];
