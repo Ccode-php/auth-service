@@ -47,7 +47,7 @@ class AuthController extends Controller
     public function refresh(Request $r)
     {
         $r->validate(['refresh_token' => 'required']);
-        $resp = Http::asForm()->post(env('APP_URL') . '/oauth/token', [
+        $resp = Http::asForm()->post(config('services.passport.token_url'), [
             'grant_type' => 'refresh_token',
             'refresh_token' => $r->refresh_token,
             'client_id' => env('PASSPORT_CLIENT_ID'),
