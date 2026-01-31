@@ -43,7 +43,7 @@ return [
 
     'connection' => env('PASSPORT_CONNECTION'),
 
-    
+    'token_url' => 'http://auth-service:8000/oauth/token',
     'password_client_id' => env('PASSPORT_CLIENT_ID'),
     'password_client_secret' => env('PASSPORT_CLIENT_SECRET'),
     

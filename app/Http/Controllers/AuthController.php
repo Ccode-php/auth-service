@@ -6,8 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
-use Laravel\Passport\Http\Controllers\AccessTokenController;
-use Psr\Http\Message\ServerRequestInterface;
 
 class AuthController extends Controller
 {
@@ -23,25 +21,28 @@ class AuthController extends Controller
     }
 
 
-    public function login(Request $request)
+    public function login(Request $r)
     {
-        $request->validate([
-            'email'    => 'required|email',
+        $r->validate([
+            'email' => 'required|email',
             'password' => 'required',
         ]);
 
-        // Laravel request → PSR-7 request
-        $psrRequest = app(ServerRequestInterface::class)->withParsedBody([
-            'grant_type'    => 'password',
-            'client_id'     => config('passport.password_client_id'),
-            'client_secret' => config('passport.password_client_secret'),
-            'username'      => $request->email,
-            'password'      => $request->password,
-            'scope'         => '',
-        ]);
+        $resp = Http::asForm()->post(
+            config('services.passport.token_url'), // masalan: http://auth-service:8000/oauth/token
+            [
+                'grant_type' => 'password',
+                'client_id' => env('PASSPORT_CLIENT_ID'),
+                'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+                'username' => $r->email,
+                'password' => $r->password,
+                'scope' => '',
+            ]
+        );
 
-        return app(AccessTokenController::class)->issueToken($psrRequest);
+        return response()->json($resp->json(), $resp->status());
     }
+
 
 
     public function refresh(Request $r)
