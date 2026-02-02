@@ -28,8 +28,14 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        logger()->info('LOGIN START', [
+            'email' => $r->email,
+            'token_url' => config('services.passport.token_url'),
+            'client_id' => env('PASSPORT_CLIENT_ID'),
+        ]);
+
         $resp = Http::asForm()->post(
-            config('services.passport.token_url'), // masalan: http://auth-service:8000/oauth/token
+            config('services.passport.token_url'),
             [
                 'grant_type' => 'password',
                 'client_id' => env('PASSPORT_CLIENT_ID'),
@@ -40,8 +46,14 @@ class AuthController extends Controller
             ]
         );
 
+        logger()->info('PASSPORT RESPONSE', [
+            'status' => $resp->status(),
+            'body' => $resp->body(),
+        ]);
+
         return response()->json($resp->json(), $resp->status());
     }
+
 
 
 
