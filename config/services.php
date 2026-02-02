@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'passport' => [
+        'token_url' => 'http://auth-service:8000/oauth/token',
+    ],
+
 ];
