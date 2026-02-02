@@ -32,35 +32,19 @@ class AuthController extends Controller
             config('services.passport.token_url'),
             [
                 'grant_type' => 'password',
-                'client_id' => env('PASSPORT_CLIENT_ID'),
-                'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+                'client_id' => config('passport.client_id'),
+                'client_secret' => config('passport.client_secret'),
                 'username' => $r->email,
                 'password' => $r->password,
                 'scope' => '',
             ]
         );
 
-        // 🔴 MUHIM: agar Passport error qaytarsa
-        if (! $resp->successful()) {
-            logger()->error('PASSPORT ERROR', [
-                'status' => $resp->status(),
-                'body' => $resp->body(),
-            ]);
-
-            return response()->json([
-                'message' => 'Login failed',
-                'passport' => $resp->json(),
-            ], 401);
-        }
-
-        // 🔴 MUHIM: json ni majburan array qilamiz
-        $data = json_decode($resp->body(), true);
-
         return response()->json([
-            'access_token' => $data['access_token'],
-            'refresh_token' => $data['refresh_token'],
-            'expires_in' => $data['expires_in'],
-            'token_type' => $data['token_type'],
+            'access_token' => $resp['access_token'],
+            'refresh_token' => $resp['refresh_token'],
+            'expires_in' => $resp['expires_in'],
+            'token_type' => $resp['token_type'],
         ]);
     }
 

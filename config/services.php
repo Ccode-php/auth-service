@@ -36,7 +36,7 @@ return [
     ],
 
     'passport' => [
-        'token_url' => 'http://auth-service:8000/oauth/token',
+        'token_url' => 'http://127.0.0.1:8000/oauth/token',
     ],
 
 ];
