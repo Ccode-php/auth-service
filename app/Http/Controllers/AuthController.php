@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Laravel\Passport\Http\Controllers\AccessTokenController;
+use Laminas\Diactoros\ServerRequestFactory;
 
 class AuthController extends Controller
 {
@@ -21,32 +23,24 @@ class AuthController extends Controller
     }
 
 
-    public function login(Request $r)
-    {
-        $r->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    public function login(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        $resp = Http::asForm()->post(
-            config('services.passport.token_url'),
-            [
-                'grant_type' => 'password',
-                'client_id' => config('passport.client_id'),
-                'client_secret' => config('passport.client_secret'),
-                'username' => $r->email,
-                'password' => $r->password,
-                'scope' => '',
-            ]
-        );
+    $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
+        'grant_type' => 'password',
+        'client_id' => config('passport.client_id'),
+        'client_secret' => config('passport.client_secret'),
+        'username' => $request->email,
+        'password' => $request->password,
+        'scope' => '',
+    ]);
 
-        return response()->json([
-            'access_token' => $resp['access_token'],
-            'refresh_token' => $resp['refresh_token'],
-            'expires_in' => $resp['expires_in'],
-            'token_type' => $resp['token_type'],
-        ]);
-    }
+    return app(AccessTokenController::class)->issueToken($psrRequest);
+}
 
 
 
