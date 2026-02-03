@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Laminas\Diactoros\ServerRequestFactory;
+use Laminas\Diactoros\Response;
+
 
 class AuthController extends Controller
 {
@@ -39,8 +41,12 @@ class AuthController extends Controller
             'scope' => '',
         ]);
 
-        return app(AccessTokenController::class)->issueToken($psrRequest);
+        $response = new Response();
+
+        return app(AccessTokenController::class)
+            ->issueToken($psrRequest, $response);
     }
+
 
 
 
