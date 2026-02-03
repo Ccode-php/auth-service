@@ -14,7 +14,13 @@ WORKDIR /var/www
 COPY . .
 
 # Composer install
-RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress
+
 
 RUN chown -R www-data:www-data /var/www
 
