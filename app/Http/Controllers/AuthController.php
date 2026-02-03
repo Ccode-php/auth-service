@@ -24,23 +24,23 @@ class AuthController extends Controller
 
 
     public function login(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
 
-    $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
-        'grant_type' => 'password',
-        'client_id' => config('passport.client_id'),
-        'client_secret' => config('passport.client_secret'),
-        'username' => $request->email,
-        'password' => $request->password,
-        'scope' => '',
-    ]);
+        $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
+            'grant_type' => 'password',
+            'client_id' => config('passport.client_id'),
+            'client_secret' => config('passport.client_secret'),
+            'username' => $request->email,
+            'password' => $request->password,
+            'scope' => '',
+        ]);
 
-    return app(AccessTokenController::class)->issueToken($psrRequest);
-}
+        return app(AccessTokenController::class)->issueToken($psrRequest);
+    }
 
 
 
@@ -54,5 +54,12 @@ class AuthController extends Controller
             'client_secret' => env('PASSPORT_CLIENT_SECRET'),
         ]);
         return response()->json($resp->json(), $resp->status());
+    }
+
+    public function logout(Request $r)
+    {
+        $user = $r->user();
+        $user->tokens()->delete(); // barcha tokenlarni o'chiradi
+        return response()->json(['message' => 'Logged out'], 200);
     }
 }
