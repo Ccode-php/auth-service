@@ -9,5 +9,5 @@ Route::post('/auth/refresh', [AuthController::class,'refresh']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/auth/logout', [AuthController::class,'logout']);
-    Route::post('/auth/user', [AuthController::class,'user']);
+    Route::get('/auth/user', [AuthController::class,'user']);
 });
