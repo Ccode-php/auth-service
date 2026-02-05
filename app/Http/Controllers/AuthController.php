@@ -59,16 +59,24 @@ class AuthController extends Controller
 
 
 
-    public function refresh(Request $r)
+    public function refresh(Request $request)
     {
-        $r->validate(['refresh_token' => 'required']);
-        $resp = Http::asForm()->post(config('services.passport.token_url'), [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $r->refresh_token,
-            'client_id' => env('PASSPORT_CLIENT_ID'),
-            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+        $request->validate([
+            'refresh_token' => 'required',
         ]);
-        return response()->json($resp->json(), $resp->status());
+
+        $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $request->refresh_token,
+            'client_id' => config('passport.client_id'),
+            'client_secret' => config('passport.client_secret'),
+            'scope' => '',
+        ]);
+
+        $response = new Response();
+
+        return app(AccessTokenController::class)
+            ->issueToken($psrRequest, $response);
     }
 
     public function user(Request $request)

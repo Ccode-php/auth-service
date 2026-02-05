@@ -23,6 +23,5 @@ class AppServiceProvider extends ServiceProvider
         Passport::enablePasswordGrant();
         Passport::tokensExpireIn(now()->addMinutes(10));        // access token 10 minut
         Passport::refreshTokensExpireIn(now()->addDay());       // refresh token 1 kun
-        Passport::personalAccessTokensExpireIn(now()->addMonths(6));
     }
 }
