@@ -15,12 +15,21 @@ class AuthController extends Controller
 {
     public function register(Request $r)
     {
-        $r->validate(['name' => 'required', 'email' => 'required|email', 'password' => 'required|min:1']);
+        $r->validate([
+            'name' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:1',
+        ]);
+
         $user = User::create([
             'name' => $r->name,
             'email' => $r->email,
-            'password' => Hash::make($r->password)
+            'password' => Hash::make($r->password),
+            'phone' => null,
+            'address' => null,
+            'card_number' => null,
         ]);
+
         return response()->json($user, 201);
     }
 
@@ -60,6 +69,11 @@ class AuthController extends Controller
             'client_secret' => env('PASSPORT_CLIENT_SECRET'),
         ]);
         return response()->json($resp->json(), $resp->status());
+    }
+
+    public function user(Request $request)
+    {
+        return response()->json($request->user());
     }
 
     public function logout(Request $r)
