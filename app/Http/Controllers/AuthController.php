@@ -62,7 +62,7 @@ class AuthController extends Controller
                 60*24, // 1 kun
                 '/',
                 null,
-                true,   // secure
+                false,   // secure
                 true,   // httpOnly
                 false,
                 'Strict' // SameSite
@@ -97,7 +97,7 @@ class AuthController extends Controller
                 60*24,
                 '/',
                 null,
-                true,
+                false,
                 true,
                 false,
                 'Strict'
