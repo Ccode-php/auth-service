@@ -2,14 +2,38 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\Diactoros\Response;
 
+
 class AuthController extends Controller
 {
+    public function register(Request $r)
+    {
+        $r->validate([
+            'name' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:1',
+        ]);
+
+        $user = User::create([
+            'name' => $r->name,
+            'email' => $r->email,
+            'password' => Hash::make($r->password),
+            'phone' => null,
+            'address' => null,
+            'card_number' => null,
+        ]);
+
+        return response()->json($user, 201);
+    }
+
+
     public function login(Request $request)
     {
         $request->validate([
