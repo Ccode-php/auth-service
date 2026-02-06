@@ -2,38 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Laravel\Passport\Http\Controllers\AccessTokenController;
 use Laminas\Diactoros\ServerRequestFactory;
 use Laminas\Diactoros\Response;
 
-
 class AuthController extends Controller
 {
-    public function register(Request $r)
-    {
-        $r->validate([
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required|min:1',
-        ]);
-
-        $user = User::create([
-            'name' => $r->name,
-            'email' => $r->email,
-            'password' => Hash::make($r->password),
-            'phone' => null,
-            'address' => null,
-            'card_number' => null,
-        ]);
-
-        return response()->json($user, 201);
-    }
-
-
     public function login(Request $request)
     {
         $request->validate([
@@ -43,51 +19,88 @@ class AuthController extends Controller
 
         $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
             'grant_type' => 'password',
-            'client_id' => config('passport.client_id'),
-            'client_secret' => config('passport.client_secret'),
+            'client_id' => env('PASSPORT_CLIENT_ID'),
+            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
             'username' => $request->email,
             'password' => $request->password,
             'scope' => '',
         ]);
 
         $response = new Response();
+        $res = app(AccessTokenController::class)->issueToken($psrRequest, $response);
+        $data = json_decode($res->getContent(), true);
 
-        return app(AccessTokenController::class)
-            ->issueToken($psrRequest, $response);
+        // refresh tokenni cookie ga qo'yamiz
+        if (isset($data['refresh_token'])) {
+            cookie()->queue(cookie(
+                'refresh_token',
+                $data['refresh_token'],
+                60*24, // 1 kun
+                '/',
+                null,
+                true,   // secure
+                true,   // httpOnly
+                false,
+                'Strict' // SameSite
+            ));
+            unset($data['refresh_token']); // frontendga yubormaymiz
+        }
+
+        return response()->json($data);
     }
-
-
-
 
     public function refresh(Request $request)
     {
-        $request->validate([
-            'refresh_token' => 'required',
-        ]);
+        $refresh_token = $request->cookie('refresh_token');
+        if (!$refresh_token) {
+            return response()->json(['message' => 'No refresh token'], 401);
+        }
 
-        $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
+        $resp = Http::asForm()->post(config('services.passport.token_url'), [
             'grant_type' => 'refresh_token',
-            'refresh_token' => $request->refresh_token,
-            'client_id' => config('passport.client_id'),
-            'client_secret' => config('passport.client_secret'),
-            'scope' => '',
+            'refresh_token' => $refresh_token,
+            'client_id' => env('PASSPORT_CLIENT_ID'),
+            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
         ]);
 
-        $response = new Response();
+        $data = $resp->json();
 
-        return app(AccessTokenController::class)
-            ->issueToken($psrRequest, $response);
+        if (isset($data['refresh_token'])) {
+            // refresh tokenni yangilaymiz
+            cookie()->queue(cookie(
+                'refresh_token',
+                $data['refresh_token'],
+                60*24,
+                '/',
+                null,
+                true,
+                true,
+                false,
+                'Strict'
+            ));
+            unset($data['refresh_token']);
+        }
+
+        return response()->json($data, $resp->status());
+    }
+
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        $user->tokens()->delete();
+
+        // refresh token cookie ni o'chiramiz
+        cookie()->queue(cookie()->forget('refresh_token'));
+
+        return response()->json(['message' => 'Logged out']);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user());
-    }
-
-    public function logout(Request $r)
-    {
-        $user = $r->user();
-        $user->tokens()->delete(); // barcha tokenlarni o'chiradi
-        return response()->json(['message' => 'Logged out'], 200);
+        return response()->json([
+            'id' => $request->user()->id,
+            'name' => $request->user()->name,
+            'email' => $request->user()->email,
+        ]);
     }
 }
