@@ -43,88 +43,51 @@ class AuthController extends Controller
 
         $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
             'grant_type' => 'password',
-            'client_id' => env('PASSPORT_CLIENT_ID'),
-            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+            'client_id' => config('passport.client_id'),
+            'client_secret' => config('passport.client_secret'),
             'username' => $request->email,
             'password' => $request->password,
             'scope' => '',
         ]);
 
         $response = new Response();
-        $res = app(AccessTokenController::class)->issueToken($psrRequest, $response);
-        $data = json_decode($res->getContent(), true);
 
-        // refresh tokenni cookie ga qo'yamiz
-        if (isset($data['refresh_token'])) {
-            cookie()->queue(cookie(
-                'refresh_token',
-                $data['refresh_token'],
-                60*24, // 1 kun
-                '/',
-                null,
-                false,   // secure
-                true,   // httpOnly
-                false,
-                'Strict' // SameSite
-            ));
-            unset($data['refresh_token']); // frontendga yubormaymiz
-        }
-
-        return response()->json($data);
+        return app(AccessTokenController::class)
+            ->issueToken($psrRequest, $response);
     }
+
+
+
 
     public function refresh(Request $request)
     {
-        $refresh_token = $request->cookie('refresh_token');
-        if (!$refresh_token) {
-            return response()->json(['message' => 'No refresh token'], 401);
-        }
-
-        $resp = Http::asForm()->post(config('services.passport.token_url'), [
-            'grant_type' => 'refresh_token',
-            'refresh_token' => $refresh_token,
-            'client_id' => env('PASSPORT_CLIENT_ID'),
-            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+        $request->validate([
+            'refresh_token' => 'required',
         ]);
 
-        $data = $resp->json();
+        $psrRequest = ServerRequestFactory::fromGlobals()->withParsedBody([
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $request->refresh_token,
+            'client_id' => config('passport.client_id'),
+            'client_secret' => config('passport.client_secret'),
+            'scope' => '',
+        ]);
 
-        if (isset($data['refresh_token'])) {
-            // refresh tokenni yangilaymiz
-            cookie()->queue(cookie(
-                'refresh_token',
-                $data['refresh_token'],
-                60*24,
-                '/',
-                null,
-                false,
-                true,
-                false,
-                'Strict'
-            ));
-            unset($data['refresh_token']);
-        }
+        $response = new Response();
 
-        return response()->json($data, $resp->status());
-    }
-
-    public function logout(Request $request)
-    {
-        $user = $request->user();
-        $user->tokens()->delete();
-
-        // refresh token cookie ni o'chiramiz
-        cookie()->queue(cookie()->forget('refresh_token'));
-
-        return response()->json(['message' => 'Logged out']);
+        return app(AccessTokenController::class)
+            ->issueToken($psrRequest, $response);
     }
 
     public function user(Request $request)
     {
-        return response()->json([
-            'id' => $request->user()->id,
-            'name' => $request->user()->name,
-            'email' => $request->user()->email,
-        ]);
+        return response()->json($request->user());
+    }
+
+    public function logout(Request $r)
+    {
+        $user = $r->user();
+        $user->tokens()->delete(); // barcha tokenlarni o'chiradi
+        return response()->json(['message' => 'Logged out'], 200);
     }
 }
